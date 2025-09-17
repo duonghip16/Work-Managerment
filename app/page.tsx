@@ -190,11 +190,13 @@ function DashboardPage() {
     if (!task) return
 
     let newStatus: "todo" | "in-progress" | "completed"
+    let shouldClearCompletion = false
 
     // Status workflow: todo -> in-progress -> completed -> todo
     switch (task.status) {
       case "todo":
         newStatus = "in-progress"
+        shouldClearCompletion = true
         toast.success("🟡 Đã bắt đầu làm việc!")
         break
       case "in-progress":
@@ -204,6 +206,7 @@ function DashboardPage() {
         return
       case "completed":
         newStatus = "todo"
+        shouldClearCompletion = true
         toast.success("🔄 Đã đặt lại trạng thái")
         break
       default:
@@ -211,14 +214,20 @@ function DashboardPage() {
     }
 
     try {
-      await updateTaskInFirestore(id, {
+      const updateData: any = {
         status: newStatus,
-        completed: newStatus === "completed",
-        completedAt: undefined,
-        completionPhoto: undefined
-      })
+        completed: newStatus === "completed"
+      }
+      
+      if (shouldClearCompletion) {
+        updateData.completedAt = null
+        updateData.completionPhoto = null
+      }
+      
+      await updateTaskInFirestore(id, updateData)
     } catch (error) {
-      toast.error("❌ Lỗi khi cập nhật trạng thái!")
+      console.error('Lỗi khi cập nhật trạng thái:', error)
+      toast.error(`❌ Lỗi khi cập nhật trạng thái: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
