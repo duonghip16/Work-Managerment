@@ -203,30 +203,30 @@ export function AnalyticsDashboard({ tasks }: AnalyticsDashboardProps) {
                   <span>Tạo mới</span>
                 </div>
               </div>
-              <div className="flex items-end justify-between h-48 gap-3 bg-muted/20 rounded-lg p-4">
+              <div className="flex items-end justify-between h-32 sm:h-48 gap-1 sm:gap-3 bg-muted/20 rounded-lg p-2 sm:p-4">
                 {last7Days.map((day, index) => {
                   const maxValue = Math.max(...last7Days.map(d => Math.max(d.completed, d.created)), 1)
                   const completedHeight = (day.completed / maxValue) * 80
                   const createdHeight = (day.created / maxValue) * 80
                   return (
-                    <div key={index} className="flex flex-col items-center gap-3 flex-1">
-                      <div className="flex items-end gap-2 h-32">
+                    <div key={index} className="flex flex-col items-center gap-1 sm:gap-3 flex-1">
+                      <div className="flex items-end gap-1 sm:gap-2 h-20 sm:h-32">
                         <div className="flex flex-col items-center">
-                          <span className="text-xs font-bold mb-2 text-green-700 dark:text-green-300">{day.completed}</span>
+                          <span className="text-xs font-bold mb-1 sm:mb-2 text-green-700 dark:text-green-300">{day.completed}</span>
                           <div 
-                            className="bg-green-500 rounded-t-lg w-5 min-h-[4px] shadow-sm transition-all duration-300 hover:bg-green-600"
+                            className="bg-green-500 rounded-t-lg w-3 sm:w-5 min-h-[4px] shadow-sm transition-all duration-300 hover:bg-green-600"
                             style={{ height: `${completedHeight}%` }}
                           ></div>
                         </div>
                         <div className="flex flex-col items-center">
-                          <span className="text-xs font-bold mb-2 text-blue-700 dark:text-blue-300">{day.created}</span>
+                          <span className="text-xs font-bold mb-1 sm:mb-2 text-blue-700 dark:text-blue-300">{day.created}</span>
                           <div 
-                            className="bg-blue-500 rounded-t-lg w-5 min-h-[4px] shadow-sm transition-all duration-300 hover:bg-blue-600"
+                            className="bg-blue-500 rounded-t-lg w-3 sm:w-5 min-h-[4px] shadow-sm transition-all duration-300 hover:bg-blue-600"
                             style={{ height: `${createdHeight}%` }}
                           ></div>
                         </div>
                       </div>
-                      <div className="text-sm font-semibold text-muted-foreground">{day.name}</div>
+                      <div className="text-xs sm:text-sm font-semibold text-muted-foreground">{day.name}</div>
                     </div>
                   )
                 })}

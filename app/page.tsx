@@ -126,13 +126,15 @@ function DashboardPage() {
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [shortcutsEnabled])
 
-  const addTask = async (taskData: Omit<Task, "id">) => {
+  const addTask = async (taskData: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
     try {
+      console.log('Dữ liệu task:', taskData)
       await addTaskToFirestore(taskData)
       setShowTaskForm(false)
       toast.success("✅ Đã thêm task thành công!")
     } catch (error) {
-      toast.error("❌ Lỗi khi thêm task!")
+      console.error('Lỗi khi thêm task:', error)
+      toast.error(`❌ Lỗi khi thêm task: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -603,12 +605,27 @@ function DashboardPage() {
 
             {/* Filter Tabs */}
             <Tabs value={filter} onValueChange={setFilter} className="mb-4 md:mb-6">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 text-xs sm:text-sm">
-                <TabsTrigger value="all" className="px-2">Tất cả ({tasks.length})</TabsTrigger>
-                <TabsTrigger value="pending" className="px-2">Đang làm ({inProgressCount})</TabsTrigger>
-                <TabsTrigger value="completed" className="px-2">Hoàn thành ({completedCount})</TabsTrigger>
-                <TabsTrigger value="high" className="px-2">Cao ({highPriorityCount})</TabsTrigger>
-                <TabsTrigger value="overdue" className="px-2">Quá hạn ({overdueCount})</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 text-xs sm:text-sm h-auto">
+                <TabsTrigger value="all" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Tất cả</span>
+                  <span className="hidden sm:block">Tất cả ({tasks.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Đang làm</span>
+                  <span className="hidden sm:block">Đang làm ({inProgressCount})</span>
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Hoàn thành</span>
+                  <span className="hidden sm:block">Hoàn thành ({completedCount})</span>
+                </TabsTrigger>
+                <TabsTrigger value="high" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Cao</span>
+                  <span className="hidden sm:block">Cao ({highPriorityCount})</span>
+                </TabsTrigger>
+                <TabsTrigger value="overdue" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Quá hạn</span>
+                  <span className="hidden sm:block">Quá hạn ({overdueCount})</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 

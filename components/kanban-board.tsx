@@ -73,6 +73,9 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
 
   // Touch event handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, task: Task) => {
+    // Chỉ kích hoạt drag trên desktop, mobile sẽ dùng buttons
+    if (window.innerWidth < 768) return
+    
     const touch = e.touches[0]
     setTouchStartPos({ x: touch.clientX, y: touch.clientY })
     setDraggedTask(task)
@@ -80,6 +83,7 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.innerWidth < 768) return
     if (!touchStartPos || !draggedTask) return
     
     const touch = e.touches[0]
@@ -94,6 +98,7 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (window.innerWidth < 768) return
     if (!isDragging || !draggedTask || !touchStartPos) {
       setDraggedTask(null)
       setTouchStartPos(null)
@@ -142,7 +147,7 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
   const TaskCard = ({ task }: { task: Task }) => (
     <Card
       className={cn(
-        "mb-4 cursor-move hover:shadow-lg transition-shadow duration-200 border hover:border-primary/30",
+        "mb-4 cursor-move hover:shadow-lg transition-shadow duration-200 border hover:border-primary/30 group",
         "bg-card hover:bg-accent/10 shadow-sm hover:shadow-md",
         task.status === "todo" && "border-l-4 border-l-slate-400 dark:border-l-slate-500",
         task.status === "in-progress" && "border-l-4 border-l-blue-500 dark:border-l-blue-400",
@@ -165,7 +170,7 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
             task.status === "in-progress" && "text-blue-700 dark:text-blue-200",
             task.status === "completed" && "text-green-700 dark:text-green-200"
           )}>{task.title}</h4>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity duration-200">
             <Button
               variant="ghost"
               size="sm"
@@ -234,6 +239,50 @@ export function KanbanBoard({ tasks, onToggle, onDelete, onEdit }: KanbanBoardPr
             )}
           </div>
         )}
+        
+        {/* Mobile Status Change Buttons */}
+        <div className="flex gap-1 mt-3 md:hidden">
+          {task.status === "todo" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs h-7 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+              onClick={() => task.id && onToggle(task.id)}
+            >
+              Bắt đầu
+            </Button>
+          )}
+          {task.status === "in-progress" && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs h-7 bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
+                onClick={() => task.id && onToggle(task.id)}
+              >
+                Quay lại
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs h-7 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                onClick={() => task.id && onToggle(task.id)}
+              >
+                Hoàn thành
+              </Button>
+            </>
+          )}
+          {task.status === "completed" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs h-7 bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
+              onClick={() => task.id && onToggle(task.id)}
+            >
+              Đặt lại
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
