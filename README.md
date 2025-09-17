@@ -82,7 +82,7 @@
 
 ### 🎯 Truy cập ngay
 1. **Mở trình duyệt** trên PC hoặc mobile
-2. **Truy cập**: [your-app-url.vercel.app](https://hipwork.vercel.app/)
+2. **Truy cập**: [https://hipwork.vercel.app](https://hipwork.vercel.app/)
 3. **Bắt đầu sử dụng** ngay lập tức - không cần đăng ký!
 
 ### 📱 Trên Mobile (iPhone/Android)
@@ -215,7 +215,7 @@ interface Task {
 ## 🚀 Production Deployment
 
 ### ✅ Đã Deploy trên Vercel
-- **Live URL**: [your-app-url.vercel.app](https://hipwork.vercel.app/)
+- **Live URL**: [https://hipwork.vercel.app](https://hipwork.vercel.app/)
 - **Auto-deployment** từ Git commits
 - **Global CDN** cho tốc độ tối ưu
 - **SSL Certificate** tự động
@@ -254,9 +254,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 👨💻 Author
 
 **Your Name**
-- GitHub: [@your-username](https://github.com/duonghip16)
+- GitHub: [duonghip16](https://github.com/duonghip16)
 - Email: duonghip1609@gmail.com
-- Live Demo: [your-app-url.vercel.app](https://hipwork.vercel.app/)
+- Live Demo: [https://hipwork.vercel.app/](https://hipwork.vercel.app/)
 
 ## 🙏 Technology Stack
 
