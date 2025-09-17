@@ -1,4 +1,4 @@
-# Work Managerment - Ứng dụng Quản lý Công việc Chuyên nghiệp
+# Work Management - Ứng dụng Quản lý Công việc Chuyên nghiệp
 
 <div align="center">
   <img src="public/favicon.png" alt="TaskFlow Logo" width="80" height="80">
