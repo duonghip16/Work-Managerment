@@ -243,7 +243,7 @@ interface Task {
 ## 🤝 Feedback & Support
 
 - **Issues**: Report bugs or request features
-- **Email**: your.email@example.com
+- **Email**: duonghip1609@gmail.com
 - **Live Demo**: Test all features online
 - **Mobile Testing**: Works on all devices
 
