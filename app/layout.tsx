@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
@@ -11,10 +11,14 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Work management - Quản lý công việc chuyên nghiệp",
   description: "Ứng dụng quản lý công việc hiện đại",
-  viewport: "width=device-width, initial-scale=1",
   icons: {
     icon: '/favicon.png',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
