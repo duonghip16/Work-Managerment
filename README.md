@@ -3,15 +3,28 @@
 <div align="center">
   <img src="public/favicon.png" alt="TaskFlow Logo" width="80" height="80">
   
-  **Ứng dụng quản lý công việc hiện đại với dashboard analytics và tính năng lọc thông minh**
+  **Ứng dụng quản lý công việc hiện đại với Firebase Cloud Sync và tính năng đa nền tảng**
   
   [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+  [![Firebase](https://img.shields.io/badge/Firebase-9-orange)](https://firebase.google.com/)
+  [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://vercel.com/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8)](https://tailwindcss.com/)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
+## 🌐 Live Demo
+
+**🔗 [Truy cập ứng dụng tại đây](https://your-app-url.vercel.app)**
+
+*Ứng dụng đã được deploy lên Vercel và sẵn sàng sử dụng trên mọi thiết bị!*
+
 ## 🚀 Tính năng chính
+
+### 🔥 Firebase Cloud Sync
+- **Real-time synchronization** giữa PC và mobile
+- **Offline support** với automatic sync khi có mạng
+- **Cross-device compatibility** - dữ liệu luôn đồng bộ
+- **Cloud backup** tự động
 
 ### 📋 Quản lý Task Toàn diện
 - **3 trạng thái workflow**: Todo → In Progress → Completed
@@ -25,17 +38,24 @@
 - **Camera access** với preview và retake
 - **Timestamp recording** cho việc theo dõi
 - **Photo viewing** trong task details
+- **Cloud storage** cho ảnh chứng minh
 
 ### 🔄 Recurring Tasks
 - **Tự động tạo task lặp lại**: Daily, Weekly, Monthly
 - **Smart scheduling**: Tính toán ngày tiếp theo tự động
-- **Backward compatibility**: Hỗ trợ dữ liệu cũ
+- **Cloud-based recurring** với Firebase
 
 ### 🎯 Multiple Views
 - **📝 List View**: Danh sách chi tiết với sorting và filtering
-- **📊 Kanban Board**: Drag & drop với 3 cột trạng thái
+- **📊 Kanban Board**: Drag & drop (desktop) + Touch buttons (mobile)
 - **📅 Calendar View**: Xem theo tháng với task details
 - **📈 Analytics Dashboard**: Thống kê và biểu đồ chi tiết
+
+### 📱 Mobile-First Design
+- **Touch-optimized** Kanban với manual status buttons
+- **Responsive tabs** và navigation
+- **Mobile camera** integration
+- **iPhone/Android** compatible
 
 ### ⌨️ Keyboard Shortcuts
 - `N` - Thêm task mới
@@ -45,47 +65,35 @@
 - `A` - Chuyển sang Analytics view
 - **Toggle ON/OFF** shortcuts trong header
 
-### 🎨 Modern UI/UX
-- **Dark/Light mode** với smooth transitions
-- **Responsive design** cho mọi thiết bị
-- **Professional styling** với Tailwind CSS
-- **Accessibility compliant** components
-- **Real-time clock** trong header
-
 ## 🛠️ Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase (configured for public use)
 - **Styling**: Tailwind CSS + shadcn/ui
-- **State Management**: React Hooks
-- **Data Persistence**: localStorage
+- **State Management**: React Hooks + Firebase Real-time
+- **Deployment**: Vercel
 - **Icons**: Lucide React
 - **Notifications**: Sonner
 - **Fonts**: Geist Sans & Mono
 
-## 📦 Cài đặt
+## 🌟 Sử dụng ứng dụng
 
-```bash
-# Clone repository
-git clone https://github.com/your-username/taskflow.git
-cd taskflow
+### 🎯 Truy cập ngay
+1. **Mở trình duyệt** trên PC hoặc mobile
+2. **Truy cập**: [your-app-url.vercel.app](https://your-app-url.vercel.app)
+3. **Bắt đầu sử dụng** ngay lập tức - không cần đăng ký!
 
-# Cài đặt dependencies
-npm install
-# hoặc
-yarn install
-# hoặc
-pnpm install
+### 📱 Trên Mobile (iPhone/Android)
+- **Thêm vào Home Screen** để trải nghiệm như native app
+- **Sử dụng camera** để chụp ảnh hoàn thành task
+- **Touch buttons** trong Kanban thay vì drag & drop
 
-# Chạy development server
-npm run dev
-# hoặc
-yarn dev
-# hoặc
-pnpm dev
-```
-
-Mở [http://localhost:3000](http://localhost:3000) để xem ứng dụng.
+### 💻 Trên Desktop
+- **Keyboard shortcuts** để thao tác nhanh
+- **Drag & drop** trong Kanban board
+- **Full analytics** dashboard
 
 ## 🏗️ Cấu trúc Project
 
@@ -108,17 +116,20 @@ taskflow/
 │   ├── task-form.tsx
 │   └── theme-toggle.tsx
 ├── lib/
+│   ├── firebase.ts           # Firebase configuration
 │   └── utils.ts
+├── services/
+│   └── taskService.ts        # Firebase CRUD operations
 ├── public/
 │   └── favicon.png
 └── README.md
 ```
 
-## 💾 Data Structure
+## 💾 Firebase Data Structure
 
 ```typescript
 interface Task {
-  id: number
+  id?: string                   # Firebase document ID
   title: string
   description?: string
   completed: boolean
@@ -130,113 +141,137 @@ interface Task {
   tags: string[]
   category?: string
   completedAt?: string
-  completionPhoto?: string
-  notes?: string
+  completionPhoto?: string      # Base64 image data
+  notes?: string               # Markdown supported
   recurring?: "none" | "daily" | "weekly" | "monthly"
   lastRecurringDate?: string
+  createdAt?: Timestamp        # Firebase server timestamp
+  updatedAt?: Timestamp        # Firebase server timestamp
 }
 ```
 
-## 🎯 Sử dụng
+## 🎯 Hướng dẫn sử dụng
 
-### Tạo Task mới
-1. Click "Thêm công việc mới" hoặc nhấn `N`
-2. Điền thông tin: tiêu đề, mô tả, thời gian, ưu tiên
-3. Thêm tags và categories tùy chọn
-4. Thiết lập recurring nếu cần
+### 🆕 Tạo Task mới
+1. **Click "Thêm công việc mới"** hoặc nhấn `N`
+2. **Điền thông tin**: tiêu đề, mô tả, thời gian, ưu tiên
+3. **Thêm tags và categories** tùy chọn
+4. **Thiết lập recurring** nếu cần
+5. **Dữ liệu tự động sync** lên Firebase Cloud
 
-### Workflow Task
+### 🔄 Workflow Task
 1. **Todo**: Task mới được tạo
-2. **In Progress**: Click vào task để bắt đầu
+2. **In Progress**: 
+   - Desktop: Click vào task
+   - Mobile: Nhấn nút "Bắt đầu"
 3. **Completed**: Chụp ảnh bắt buộc để hoàn thành
 
-### Views và Navigation
-- Sử dụng buttons trên header hoặc keyboard shortcuts
-- Filter và sort trong List view
-- Drag & drop trong Kanban view
-- Click vào ngày trong Calendar view
+### 📱 Mobile vs Desktop
+- **Desktop**: Drag & drop trong Kanban
+- **Mobile**: Touch buttons để chuyển trạng thái
+- **Cả hai**: Real-time sync giữa thiết bị
+
+### 🎮 Views và Navigation
+- **Header buttons** hoặc keyboard shortcuts
+- **Filter và sort** trong List view
+- **Touch-friendly** Kanban trên mobile
+- **Calendar view** với task details
 
 ## 📊 Analytics Features
 
+- **Real-time Statistics**: Cập nhật tức thì từ Firebase
 - **Completion Rate**: Tỷ lệ hoàn thành tổng thể
 - **Status Distribution**: Phân bố theo trạng thái
-- **Weekly Trends**: xu hướng hoàn thành theo tuần
+- **Weekly Trends**: Xu hướng hoàn thành theo tuần
 - **Category Analysis**: Phân tích theo danh mục
 - **Photo Verification Rate**: Tỷ lệ task có ảnh chứng minh
+- **Cross-device Analytics**: Thống kê từ mọi thiết bị
 
-## 🔧 Customization
+## 🔧 Tính năng nâng cao
 
-### Theme Configuration
-- Sử dụng CSS variables trong `globals.css`
-- Dark/light mode tự động theo system preference
-- Custom colors cho priority và status
+### 🌙 Theme System
+- **Dark/Light mode** tự động theo system
+- **Smooth transitions** giữa các theme
+- **Custom colors** cho priority và status
 
-### Keyboard Shortcuts
-- Enable/disable trong header
-- Không hoạt động khi focus vào input fields
-- Toast notifications cho feedback
+### ⌨️ Keyboard Shortcuts
+- **Toggle ON/OFF** trong header
+- **Smart detection** - không hoạt động khi typing
+- **Toast feedback** cho mọi thao tác
 
-## 📱 Responsive Design
+### 🔄 Real-time Sync
+- **Instant updates** giữa các thiết bị
+- **Offline support** với auto-sync
+- **Conflict resolution** tự động
 
-- **Mobile First**: Tối ưu cho mobile devices
-- **Tablet Support**: Layout adaptive cho tablet
+## 📱 Cross-Platform Support
+
+- **Mobile First**: Tối ưu cho iPhone/Android
+- **Touch Optimized**: Buttons thay vì drag & drop
+- **Tablet Support**: Layout adaptive
 - **Desktop**: Full features với keyboard shortcuts
+- **PWA Ready**: Có thể cài như native app
 
-## 🚀 Deployment
+## 🚀 Production Deployment
 
-### Vercel (Recommended)
-```bash
-npm run build
-vercel --prod
-```
+### ✅ Đã Deploy trên Vercel
+- **Live URL**: [your-app-url.vercel.app](https://your-app-url.vercel.app)
+- **Auto-deployment** từ Git commits
+- **Global CDN** cho tốc độ tối ưu
+- **SSL Certificate** tự động
 
-### Netlify
-```bash
-npm run build
-npm run export
-# Upload dist folder
-```
+### 🔧 Firebase Configuration
+- **Firestore Database**: Real-time NoSQL
+- **Security Rules**: Configured for public access
+- **Cloud Storage**: Cho ảnh chứng minh
+- **Analytics**: Usage tracking
 
-### Docker
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
+### 📈 Performance
+- **Next.js 14**: App Router với Server Components
+- **Vercel Edge**: Global edge network
+- **Firebase**: Real-time database
+- **Optimized Images**: Automatic optimization
 
-## 🤝 Contributing
+## 🔒 Security & Privacy
 
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
+- **Firebase Security Rules**: Configured for safe public access
+- **No Authentication Required**: Immediate access
+- **Data Isolation**: Each session independent
+- **HTTPS Only**: Secure connections
+- **No Personal Data**: Only task information stored
+
+## 🤝 Feedback & Support
+
+- **Issues**: Report bugs or request features
+- **Email**: your.email@example.com
+- **Live Demo**: Test all features online
+- **Mobile Testing**: Works on all devices
 
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-## 👨‍💻 Author
+## 👨💻 Author
 
 **Your Name**
 - GitHub: [@your-username](https://github.com/your-username)
 - Email: your.email@example.com
+- Live Demo: [your-app-url.vercel.app](https://your-app-url.vercel.app)
 
-## 🙏 Acknowledgments
+## 🙏 Technology Stack
 
-- [Next.js](https://nextjs.org/) - React framework
-- [shadcn/ui](https://ui.shadcn.com/) - UI components
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Lucide](https://lucide.dev/) - Icon library
+- [Next.js 14](https://nextjs.org/) - React framework with App Router
+- [Firebase](https://firebase.google.com/) - Backend-as-a-Service
 - [Vercel](https://vercel.com/) - Deployment platform
+- [shadcn/ui](https://ui.shadcn.com/) - UI component library
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Lucide](https://lucide.dev/) - Icon library
 
 ---
 
 <div align="center">
-  Made with ❤️ using Next.js and TypeScript
+  <h3>🌟 Ready to boost your productivity?</h3>
+  <p><strong><a href="https://your-app-url.vercel.app">Try TaskFlow now!</a></strong></p>
+  <p>Made with ❤️ using Next.js, Firebase & TypeScript</p>
 </div>

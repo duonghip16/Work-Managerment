@@ -4,22 +4,25 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Clock, Plus, BarChart3, List, Download, Upload, Calendar, ArrowUpDown, Columns3, Home } from "lucide-react"
+import { CheckCircle, Clock, Plus, BarChart3, List, Download, Upload, Calendar, ArrowUpDown, Columns3, Home, Edit, Trash2 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { TaskForm } from "@/components/task-form"
-import { TaskCard } from "@/components/task-card"
 import { AnalyticsDashboard } from "@/components/analytics-dashboard"
 import { OnboardingTour } from "@/components/onboarding-tour"
 import { SearchFilter } from "@/components/search-filter"
 import { KanbanBoard } from "@/components/kanban-board"
+import { KanbanBoardVertical } from "@/components/kanban-board-vertical"
 import { CalendarView } from "@/components/calendar-view"
 import { PhotoCaptureModal } from "@/components/photo-capture-modal"
 import { TaskDetailModal } from "@/components/task-detail-modal"
+import { TaskEditModal } from "@/components/task-edit-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { getTasks, addTask as addTaskToFirestore, updateTask as updateTaskInFirestore, deleteTask as deleteTaskFromFirestore, subscribeToTasks, Task } from "@/services/taskService"
+import { cn } from "@/lib/utils"
 
 
 
@@ -76,7 +79,8 @@ function DashboardPage() {
   const [filter, setFilter] = useState("all")
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [currentView, setCurrentView] = useState<"tasks" | "analytics" | "calendar" | "kanban">("tasks")
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [currentView, setCurrentView] = useState<"tasks" | "analytics" | "calendar" | "kanban" | "carousel">("tasks")
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "created">("dueDate")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks)
@@ -185,32 +189,52 @@ function DashboardPage() {
     }
   }
 
-  const toggleTask = async (id: string) => {
+  const toggleTask = async (id: string, targetStatus?: string) => {
     const task = tasks.find(t => t.id === id)
     if (!task) return
 
     let newStatus: "todo" | "in-progress" | "completed"
     let shouldClearCompletion = false
 
-    // Status workflow: todo -> in-progress -> completed -> todo
-    switch (task.status) {
-      case "todo":
-        newStatus = "in-progress"
-        shouldClearCompletion = true
-        toast.success("🟡 Đã bắt đầu làm việc!")
-        break
-      case "in-progress":
-        // Require photo for completion
+    // If targetStatus is provided, use it directly
+    if (targetStatus) {
+      newStatus = targetStatus as "todo" | "in-progress" | "completed"
+      
+      if (newStatus === "completed" && task.status === "in-progress") {
+        // Require photo for completion from in-progress
         setTaskToComplete(task)
         setShowPhotoCapture(true)
         return
-      case "completed":
-        newStatus = "todo"
-        shouldClearCompletion = true
-        toast.success("🔄 Đã đặt lại trạng thái")
-        break
-      default:
-        return
+      }
+      
+      shouldClearCompletion = newStatus !== "completed"
+      
+      if (newStatus === "todo") {
+        toast.success("🔄 Đã chuyển về Todo")
+      } else if (newStatus === "in-progress") {
+        toast.success("🟡 Đã bắt đầu làm việc!")
+      }
+    } else {
+      // Default workflow: todo -> in-progress -> completed -> todo
+      switch (task.status) {
+        case "todo":
+          newStatus = "in-progress"
+          shouldClearCompletion = true
+          toast.success("🟡 Đã bắt đầu làm việc!")
+          break
+        case "in-progress":
+          // Require photo for completion
+          setTaskToComplete(task)
+          setShowPhotoCapture(true)
+          return
+        case "completed":
+          newStatus = "todo"
+          shouldClearCompletion = true
+          toast.success("🔄 Đã đặt lại trạng thái")
+          break
+        default:
+          return
+      }
     }
 
     try {
@@ -303,12 +327,17 @@ function DashboardPage() {
 
   const editTask = (task: Task) => {
     setEditingTask(task)
-    setShowTaskForm(true)
+    setShowEditModal(true)
   }
 
   const viewTaskDetail = (task: Task) => {
     setSelectedTask(task)
     setShowTaskDetail(true)
+  }
+
+  const handleAnalyticsFilter = (filterType: string) => {
+    setCurrentView("tasks")
+    setFilter(filterType)
   }
 
   const getDisplayTasks = () => {
@@ -318,7 +347,36 @@ function DashboardPage() {
       if (filter === "completed") return task.status === "completed"
       if (filter === "pending") return task.status === "in-progress"
       if (filter === "high") return task.priority === "high"
-      if (filter === "overdue") return new Date(task.dueDate) < new Date() && (task.status === "todo" || task.status === "in-progress")
+      if (filter === "overdue") {
+        if (task.status === "completed") return false
+        
+        const now = new Date()
+        const dueDate = new Date(task.dueDate)
+        
+        // If task has end time, use it as deadline
+        if (task.endTime) {
+          const [hours, minutes] = task.endTime.split(':')
+          dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+        } else {
+          // If no end time, deadline is end of day
+          dueDate.setHours(23, 59, 59, 999)
+        }
+        
+        return now > dueDate
+      }
+      if (filter === "due-soon") {
+        const dueDate = new Date(task.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const tomorrow = new Date(today)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(23, 59, 59, 999)
+        return dueDate >= today && dueDate <= tomorrow && task.status !== "completed"
+      }
+      if (filter === "with-photo") {
+        return task.status === "completed" && task.completionPhoto
+      }
       return true
     })
 
@@ -347,25 +405,49 @@ function DashboardPage() {
   const inProgressCount = tasks.filter((task) => task.status === "in-progress").length
   const todoCount = tasks.filter((task) => task.status === "todo").length
   const overdueCount = tasks.filter((task) => {
-    return new Date(task.dueDate) < new Date() && (task.status === "todo" || task.status === "in-progress")
+    if (task.status === "completed") return false
+    
+    const now = new Date()
+    const dueDate = new Date(task.dueDate)
+    
+    // If task has end time, use it as deadline
+    if (task.endTime) {
+      const [hours, minutes] = task.endTime.split(':')
+      dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    } else {
+      // If no end time, deadline is end of day
+      dueDate.setHours(23, 59, 59, 999)
+    }
+    
+    return now > dueDate
+  }).length
+  const dueSoonCount = tasks.filter((task) => {
+    const dueDate = new Date(task.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(23, 59, 59, 999)
+    return dueDate >= today && dueDate <= tomorrow && task.status !== "completed"
   }).length
   const highPriorityCount = tasks.filter((task) => task.priority === "high").length
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
+      {/* Modern Header */}
+      <header className="modern-navbar border-b bg-card">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <img src="/favicon.png" alt="Work management" className="h-6 w-6 md:h-8 md:w-8 cursor-pointer" onClick={() => window.location.reload()} />
+              <img src="/favicon.png" alt="Work management" className="h-6 w-6 md:h-8 md:w-8 cursor-pointer logo-bounce" onClick={() => window.location.reload()} />
               <h1 className="text-lg md:text-2xl font-bold cursor-pointer hover:text-primary transition-colors" onClick={() => window.location.reload()}>Work Management</h1>
             </div>
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs px-2 py-1 h-6 hidden sm:flex ${shortcutsEnabled ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' : 'bg-muted text-muted-foreground'}`}
+                className={`text-xs px-2 py-1 h-6 hidden sm:flex nav-button ${shortcutsEnabled ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' : 'bg-muted text-muted-foreground'}`}
                 onClick={() => setShortcutsEnabled(!shortcutsEnabled)}
                 title={shortcutsEnabled ? "Tắt shortcuts" : "Bật shortcuts"}
               >
@@ -387,16 +469,16 @@ function DashboardPage() {
         </div>
       </header>
 
-      {/* Navigation Bar */}
-      <nav className="border-b bg-muted/30">
+      {/* Modern Navigation Bar */}
+      <nav className="modern-navbar border-b bg-muted/30">
         <div className="container mx-auto px-4 py-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto">
+            <div className="flex items-center gap-1 w-full sm:w-auto">
               <Button
                 variant={currentView === "tasks" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCurrentView("tasks")}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 nav-button ${currentView === "tasks" ? "active" : ""}`}
               >
                 <List className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Danh sách</span>
@@ -405,7 +487,7 @@ function DashboardPage() {
                 variant={currentView === "kanban" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCurrentView("kanban")}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 nav-button ${currentView === "kanban" ? "active" : ""}`}
               >
                 <Columns3 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Kanban</span>
@@ -414,7 +496,7 @@ function DashboardPage() {
                 variant={currentView === "calendar" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCurrentView("calendar")}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 nav-button ${currentView === "calendar" ? "active" : ""}`}
               >
                 <Calendar className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Lịch</span>
@@ -423,7 +505,7 @@ function DashboardPage() {
                 variant={currentView === "analytics" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCurrentView("analytics")}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 nav-button ${currentView === "analytics" ? "active" : ""}`}
               >
                 <BarChart3 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Thống kê</span>
@@ -431,11 +513,11 @@ function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={exportTasks} className="flex-shrink-0">
+              <Button variant="outline" size="sm" onClick={exportTasks} className="flex-shrink-0 nav-button">
                 <Download className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Xuất</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => document.getElementById('import-file')?.click()} className="flex-shrink-0">
+              <Button variant="outline" size="sm" onClick={() => document.getElementById('import-file')?.click()} className="flex-shrink-0 nav-button">
                 <Upload className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Nhập</span>
               </Button>
@@ -453,99 +535,93 @@ function DashboardPage() {
 
       <div className="container mx-auto px-4 py-4 md:py-8">
         {currentView === "analytics" ? (
-          <AnalyticsDashboard tasks={tasks} />
+          <AnalyticsDashboard tasks={tasks} onFilterClick={handleAnalyticsFilter} />
         ) : currentView === "kanban" ? (
           <>
-            {/* Task Form for Kanban */}
-            {showTaskForm && (
-              <div className="mb-8">
-                <TaskForm
-                  onAddTask={addTask}
-                  onCancel={() => {
-                    setShowTaskForm(false)
-                    setEditingTask(null)
-                  }}
-                  editingTask={editingTask}
-                  onUpdateTask={updateTask}
-                />
-              </div>
-            )}
-            <KanbanBoard
+            <KanbanBoardVertical
               tasks={displayTasks}
               onToggle={toggleTask}
               onDelete={deleteTask}
               onEdit={editTask}
+              onViewDetail={viewTaskDetail}
             />
           </>
         ) : currentView === "calendar" ? (
           <>
-            {/* Task Form for Calendar */}
-            {showTaskForm && (
-              <div className="mb-8">
-                <TaskForm
-                  onAddTask={addTask}
-                  onCancel={() => {
-                    setShowTaskForm(false)
-                    setEditingTask(null)
-                  }}
-                  editingTask={editingTask}
-                  onUpdateTask={updateTask}
-                />
-              </div>
-            )}
+
             <CalendarView tasks={tasks} onEdit={editTask} />
           </>
         ) : (
           <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6 md:mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tổng công việc</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+            {/* Professional Stats Dashboard */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950/20 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/10" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 md:pb-3 relative z-10 px-2 sm:px-4 md:px-6 pt-2 sm:pt-4 md:pt-6">
+                  <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">Tổng</CardTitle>
+                  <div className="p-1 sm:p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{tasks.length}</div>
+                <CardContent className="relative z-10 px-2 sm:px-4 md:px-6 pb-2 sm:pb-4 md:pb-6">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200 mb-0.5 sm:mb-1">{tasks.length}</div>
+                  <p className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">Tasks</p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Chưa bắt đầu</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+              <Card className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-950/20 dark:to-slate-950/30 border-gray-200/50 dark:border-gray-800/30 hover:shadow-lg hover:shadow-gray-500/10 transition-all duration-300 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-slate-500/10" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 md:pb-3 relative z-10 px-2 sm:px-4 md:px-6 pt-2 sm:pt-4 md:pt-6">
+                  <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Todo</CardTitle>
+                  <div className="p-1 sm:p-2 bg-gray-500/10 rounded-lg group-hover:bg-gray-500/20 transition-colors">
+                    <div className="text-sm sm:text-lg">⏳</div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-600">{todoCount}</div>
+                <CardContent className="relative z-10 px-2 sm:px-4 md:px-6 pb-2 sm:pb-4 md:pb-6">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-0.5 sm:mb-1">{todoCount}</div>
+                  <p className="text-xs text-gray-600/80 dark:text-gray-400/80 font-medium">Chờ</p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Đang thực hiện</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-950/20 dark:to-cyan-950/30 border-blue-200/50 dark:border-blue-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/10" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 md:pb-3 relative z-10 px-2 sm:px-4 md:px-6 pt-2 sm:pt-4 md:pt-6">
+                  <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">Doing</CardTitle>
+                  <div className="p-1 sm:p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
+                    <div className="text-sm sm:text-lg">⚡</div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
+                <CardContent className="relative z-10 px-2 sm:px-4 md:px-6 pb-2 sm:pb-4 md:pb-6">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200 mb-0.5 sm:mb-1">{inProgressCount}</div>
+                  <p className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">Làm</p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Đã hoàn thành</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <Card className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-950/30 border-green-200/50 dark:border-green-800/30 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/10" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 md:pb-3 relative z-10 px-2 sm:px-4 md:px-6 pt-2 sm:pt-4 md:pt-6">
+                  <CardTitle className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">Done</CardTitle>
+                  <div className="p-1 sm:p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors">
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+                <CardContent className="relative z-10 px-2 sm:px-4 md:px-6 pb-2 sm:pb-4 md:pb-6">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200 mb-0.5 sm:mb-1">{completedCount}</div>
+                  <p className="text-xs text-green-600/80 dark:text-green-400/80 font-medium">Xong</p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Quá hạn</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+              <Card className="relative overflow-hidden bg-gradient-to-br from-red-50 to-orange-100 dark:from-red-950/20 dark:to-orange-950/30 border-red-200/50 dark:border-red-800/30 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-300 group col-span-2 sm:col-span-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-orange-500/10" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 md:pb-3 relative z-10 px-2 sm:px-4 md:px-6 pt-2 sm:pt-4 md:pt-6">
+                  <CardTitle className="text-xs sm:text-sm font-semibold text-red-700 dark:text-red-300">Overdue</CardTitle>
+                  <div className="p-1 sm:p-2 bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors">
+                    <div className="text-sm sm:text-lg">⚠️</div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{overdueCount}</div>
+                <CardContent className="relative z-10 px-2 sm:px-4 md:px-6 pb-2 sm:pb-4 md:pb-6">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-red-800 dark:text-red-200 mb-0.5 sm:mb-1">{overdueCount}</div>
+                  <p className="text-xs text-red-600/80 dark:text-red-400/80 font-medium">Trễ</p>
                 </CardContent>
               </Card>
             </div>
@@ -597,24 +673,11 @@ function DashboardPage() {
               </div>
             )}
 
-            {/* Task Form */}
-            {showTaskForm && (
-              <div className="mb-8">
-                <TaskForm
-                  onAddTask={addTask}
-                  onCancel={() => {
-                    setShowTaskForm(false)
-                    setEditingTask(null)
-                  }}
-                  editingTask={editingTask}
-                  onUpdateTask={updateTask}
-                />
-              </div>
-            )}
+
 
             {/* Filter Tabs */}
             <Tabs value={filter} onValueChange={setFilter} className="mb-4 md:mb-6">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 text-xs sm:text-sm h-auto">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 text-xs sm:text-sm h-auto">
                 <TabsTrigger value="all" className="px-1 sm:px-2 py-2 text-xs leading-tight">
                   <span className="block sm:hidden">Tất cả</span>
                   <span className="hidden sm:block">Tất cả ({tasks.length})</span>
@@ -635,26 +698,244 @@ function DashboardPage() {
                   <span className="block sm:hidden">Quá hạn</span>
                   <span className="hidden sm:block">Quá hạn ({overdueCount})</span>
                 </TabsTrigger>
+                <TabsTrigger value="due-soon" className="px-1 sm:px-2 py-2 text-xs leading-tight">
+                  <span className="block sm:hidden">Sắp hết</span>
+                  <span className="hidden sm:block">Sắp hết hạn ({dueSoonCount})</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
-            {/* Tasks List */}
-            <div className="space-y-4">
-              {displayTasks.map((task) => (
-                <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} onEdit={editTask} onViewDetail={viewTaskDetail} />
-              ))}
+            {/* Professional View Selector */}
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-background/80 to-muted/50 backdrop-blur-sm rounded-2xl p-1 border border-border/50 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="relative px-6 py-3 rounded-xl font-medium transition-all duration-300 btn-professional bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105"
+                    >
+                      <List className="h-4 w-4 mr-2" />
+                      <span>Danh sách</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="font-medium">{displayTasks.length} tasks</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              {displayTasks.length === 0 && (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      {searchTerm
-                        ? "Không tìm thấy công việc phù hợp với từ khóa tìm kiếm."
-                        : "Không có công việc nào phù hợp với bộ lọc hiện tại."}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+            {/* Professional Content Area - Grid View */}
+            <div className="relative">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+                {displayTasks.map((task, index) => {
+                  const isOverdue = () => {
+                    if (task.status === "completed") return false
+                    
+                    const now = new Date()
+                    const dueDate = new Date(task.dueDate)
+                    
+                    if (task.endTime) {
+                      const [hours, minutes] = task.endTime.split(':')
+                      dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+                    } else {
+                      dueDate.setHours(23, 59, 59, 999)
+                    }
+                    
+                    return now > dueDate
+                  }
+
+                  const getPriorityColor = (priority: string) => {
+                    switch (priority) {
+                      case "high": return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800"
+                      case "medium": return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800"
+                      case "low": return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800"
+                      default: return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                    }
+                  }
+
+                  return (
+                    <Card 
+                      key={task.id}
+                      className={cn(
+                        "hover:shadow-lg transition-all duration-300 border group cursor-pointer h-fit",
+                        "bg-card hover:bg-accent/10 shadow-sm",
+                        task.status === "todo" && "border-l-4 border-l-slate-400 dark:border-l-slate-500",
+                        task.status === "in-progress" && "border-l-4 border-l-blue-500 dark:border-l-blue-400",
+                        task.status === "completed" && "border-l-4 border-l-green-500 dark:border-l-green-400",
+                        isOverdue() && "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20",
+                        "animate-in slide-in-from-bottom-4 duration-500"
+                      )}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                      onClick={() => viewTaskDetail(task)}
+                    >
+                      <CardContent className="p-2 sm:p-3">
+                        <div className="flex justify-between items-start mb-1.5">
+                          <h3 className={cn(
+                            "font-medium text-xs sm:text-sm line-clamp-2 flex-1 mr-1 leading-tight",
+                            task.status === "todo" && "text-slate-700 dark:text-slate-200",
+                            task.status === "in-progress" && "text-blue-700 dark:text-blue-200",
+                            task.status === "completed" && "text-green-700 dark:text-green-200 line-through"
+                          )}>
+                            {task.title}
+                          </h3>
+                          <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                editTask(task)
+                              }}
+                              className="h-5 w-5 p-0 sm:h-6 sm:w-6"
+                            >
+                              <Edit className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteTask(task.id!)
+                              }}
+                              className="h-5 w-5 p-0 sm:h-6 sm:w-6 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-0.5 sm:gap-1 mb-1.5">
+                          <Badge className={cn("text-xs font-medium px-1 py-0.5 sm:px-1.5", getPriorityColor(task.priority))}>
+                            {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'}
+                          </Badge>
+                          
+                          {isOverdue() && (
+                            <Badge variant="destructive" className="text-xs px-1 py-0.5 sm:px-1.5">
+                              ⚠️
+                            </Badge>
+                          )}
+                          
+                          {task.completionPhoto && (
+                            <Badge variant="outline" className="text-xs px-1 py-0.5 sm:px-1.5">
+                              📸
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
+                          <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="text-xs">{task.dueDate}</span>
+                        </div>
+
+                        {task.tags && task.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1.5">
+                            {task.tags.slice(0, 1).map((tag, tagIndex) => (
+                              <Badge key={tagIndex} variant="secondary" className="text-xs px-1 py-0.5 sm:px-1.5">
+                                {tag.length > 8 ? tag.substring(0, 8) + '...' : tag}
+                              </Badge>
+                            ))}
+                            {task.tags.length > 1 && (
+                              <Badge variant="outline" className="text-xs px-1 py-0.5 sm:px-1.5">
+                                +{task.tags.length - 1}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-0.5 sm:gap-1 mt-auto">
+                          {task.status === "todo" && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleTask(task.id!)
+                              }}
+                              className="flex-1 h-6 sm:h-7 text-xs bg-blue-500 hover:bg-blue-600"
+                            >
+                              ▶️
+                            </Button>
+                          )}
+                          {task.status === "in-progress" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleTask(task.id!, 'todo')
+                                }}
+                                className="flex-1 h-6 sm:h-7 text-xs"
+                              >
+                                ⬅️
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleTask(task.id!, 'completed')
+                                }}
+                                className="flex-1 h-6 sm:h-7 text-xs bg-green-500 hover:bg-green-600"
+                              >
+                                ✅
+                              </Button>
+                            </>
+                          )}
+                          {task.status === "completed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleTask(task.id!)
+                              }}
+                              className="flex-1 h-6 sm:h-7 text-xs"
+                            >
+                              🔄
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+
+                {displayTasks.length === 0 && (
+                  <div className="col-span-full">
+                    <Card className="border-dashed border-2 border-muted-foreground/25 bg-gradient-to-br from-muted/30 to-muted/10">
+                      <CardContent className="p-6 sm:p-12 text-center">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-muted-foreground/20 to-muted-foreground/10 rounded-full flex items-center justify-center">
+                          <div className="text-xl sm:text-2xl">📋</div>
+                        </div>
+                        <h3 className="text-base sm:text-lg font-semibold mb-2 text-muted-foreground">
+                          {searchTerm ? "Không tìm thấy kết quả" : "Chưa có task nào"}
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground/80 max-w-md mx-auto">
+                          {searchTerm
+                            ? "Thử thay đổi từ khóa tìm kiếm hoặc bỏ lọc để xem thêm kết quả."
+                            : "Bắt đầu bằng cách tạo task đầu tiên của bạn!"}
+                        </p>
+                        {!searchTerm && (
+                          <Button 
+                            onClick={() => setShowTaskForm(true)} 
+                            className="mt-3 sm:mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                            size="sm"
+                          >
+                            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            <span className="text-xs sm:text-sm">Tạo task mới</span>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -679,6 +960,19 @@ function DashboardPage() {
           setShowTaskDetail(false)
           setSelectedTask(null)
         }}
+      />
+
+      {/* Task Edit Modal */}
+      <TaskEditModal
+        task={editingTask}
+        isOpen={showEditModal || showTaskForm}
+        onClose={() => {
+          setShowEditModal(false)
+          setShowTaskForm(false)
+          setEditingTask(null)
+        }}
+        onAddTask={addTask}
+        onUpdateTask={updateTask}
       />
     </div>
   )

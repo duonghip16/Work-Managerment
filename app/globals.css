@@ -117,11 +117,685 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* 3D Carousel Effect for Task Cards */
+.task-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.task-card:hover {
+  transform: rotateY(10deg) rotateX(5deg) translateZ(20px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.task-card.priority-high:hover {
+  box-shadow: 
+    0 20px 40px rgba(239, 68, 68, 0.3),
+    0 10px 20px rgba(239, 68, 68, 0.2),
+    inset 0 0 0 1px rgba(239, 68, 68, 0.2);
+}
+
+.task-card.priority-medium:hover {
+  box-shadow: 
+    0 20px 40px rgba(245, 158, 11, 0.3),
+    0 10px 20px rgba(245, 158, 11, 0.2),
+    inset 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
+.task-card.priority-low:hover {
+  box-shadow: 
+    0 20px 40px rgba(16, 185, 129, 0.3),
+    0 10px 20px rgba(16, 185, 129, 0.2),
+    inset 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.task-card.status-completed:hover {
+  transform: rotateY(-10deg) rotateX(-5deg) translateZ(25px);
+}
+
+.task-card.status-in-progress:hover {
+  transform: rotateY(15deg) rotateX(8deg) translateZ(30px) scale(1.02);
+}
+
+/* Modern Navbar Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes navGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.modern-navbar {
+  animation: slideDown 0.6s ease-out;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .modern-navbar {
+  background: rgba(0, 0, 0, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-button {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.nav-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.nav-button:hover::before {
+  left: 100%;
+}
+
+.nav-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.nav-button.active {
+  animation: navGlow 2s infinite;
+  transform: scale(1.05);
+}
+
+.logo-bounce {
+  transition: transform 0.3s ease;
+}
+
+.logo-bounce:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+/* Swiper Kanban Styles */
+.kanban-swiper {
+  padding-bottom: 40px !important;
+}
+
+.kanban-swiper .swiper-pagination {
+  bottom: 10px !important;
+}
+
+.kanban-swiper .swiper-pagination-bullet {
+  background: hsl(var(--primary)) !important;
+  opacity: 0.5;
+}
+
+.kanban-swiper .swiper-pagination-bullet-active {
+  opacity: 1;
+}
+
+.kanban-swiper .swiper-button-next,
+.kanban-swiper .swiper-button-prev {
+  color: hsl(var(--primary)) !important;
+  background: hsl(var(--background)) !important;
+  border-radius: 50%;
+  width: 40px !important;
+  height: 40px !important;
+  margin-top: -20px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.kanban-swiper .swiper-button-next:after,
+.kanban-swiper .swiper-button-prev:after {
+  font-size: 16px !important;
+}
+/* Task Swiper Styles */
+.task-swiper {
+  height: 100% !important;
+}
+
+.task-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.task-swiper .swiper-slide {
+  height: auto !important;
+  margin-bottom: 16px;
+}
+
+.task-swiper .swiper-slide:last-child {
+  margin-bottom: 0;
+}
+/* 3D Carousel Styles */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Kanban Card Flip Styles */
+.kanban-card-container {
+  perspective: 1000px;
+  height: auto;
+  min-height: 200px;
+}
+
+.kanban-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.kanban-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.kanban-card-front,
+.kanban-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 0.75rem;
+}
+
+.kanban-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Enhanced hover effects for flippable cards */
+.kanban-card-container:hover .kanban-card-inner:not(.flipped) {
+  transform: rotateY(5deg) rotateX(2deg);
+}
+
+.kanban-card-container:hover .kanban-card-inner.flipped {
+  transform: rotateY(175deg) rotateX(-2deg);
+}
+
+/* 3D Effects */
+.shadow-3xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 
+              0 0 30px rgba(var(--primary), 0.1);
+}
+
+/* Cosmic Background for Carousel */
+.carousel-cosmic-bg {
+  background: radial-gradient(ellipse at center, 
+    rgba(30, 30, 60, 0.3) 0%, 
+    rgba(10, 10, 20, 0.8) 100%);
+}
+
+/* Glow Effects */
+.task-card-glow {
+  position: relative;
+}
+
+.task-card-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    transparent, 
+    rgba(var(--primary), 0.3), 
+    transparent);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.task-card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Animation for card flip */
+@keyframes cardFlip {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(180deg); }
+}
+
+@keyframes cardFlipBack {
+  0% { transform: rotateY(180deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+/* Smooth transitions for card interactions */
+.kanban-card-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kanban-card-transition:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .perspective-1000 {
+    perspective: 600px;
+  }
+}
+/* Professional Animations */
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.slide-in-from-bottom-4 {
+  animation: slide-in-from-bottom 0.6s ease-out;
+}
+
+/* Professional Hover Effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)) 40%, hsl(var(--accent)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Professional Glass Effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced Shadows */
+.shadow-professional {
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.shadow-professional-lg {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Professional Button Styles */
+.btn-professional {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-professional::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-professional:hover::before {
+  left: 100%;
+}
+
+/* 3D Carousel Todo Styles */
+.carousel-3d-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.carousel-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.carousel-card {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.carousel-card:hover {
+  transform: translateZ(20px) !important;
+}
+
+/* Cosmic Background Effects for Carousel */
+.carousel-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(157, 0, 255, 0.1),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.carousel-card:hover::before {
+  opacity: 1;
+}
+
+/* Glitch Effect for Cards */
+@keyframes glitch {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0 100%;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.carousel-card .glitch-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    45deg,
+    transparent 65%,
+    rgba(157, 0, 255, 0.3) 70%,
+    transparent 75%
+  );
+  background-size: 200% 200%;
+  animation: glitch 3s linear infinite;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.carousel-card:hover .glitch-effect {
+  opacity: 0.5;
+}
+
+/* Memory Card Styles */
+.memory-card:hover .card-inner {
+  transform: translateZ(20px);
+}
+
+.memory-card.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* Improved card interactions for mobile */
+@media (max-width: 768px) {
+  .memory-card {
+    cursor: pointer;
+  }
+  
+  .memory-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Better button visibility in dark mode */
+.dark .memory-card button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+.dark .memory-card button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.memory-card:hover .card-glow {
+  opacity: 1 !important;
+}
+
+.control-btn:hover {
+  background: rgba(30, 30, 60, 0.9) !important;
+  transform: scale(1.1);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0 100%;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+/* Mobile Optimization for Carousels */
+@media (max-width: 768px) {
+  .carousel-container {
+    height: 280px !important;
+    padding: 0;
+    margin-bottom: 40px;
+  }
+  
+  .memory-card {
+    width: 200px !important;
+    height: 240px !important;
+    margin-left: -100px !important;
+    margin-top: -120px !important;
+  }
+  
+  .carousel-controls {
+    bottom: -35px !important;
+    gap: 6px !important;
+  }
+  
+  .control-btn {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 8px !important;
+  }
+  
+  .card-content {
+    padding: 6px !important;
+  }
+  
+  .memory-image {
+    height: 50px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .card-content h3 {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .card-content button {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+    height: 18px !important;
+  }
+  
+  .kanban-section {
+    margin-bottom: 1rem !important;
+    padding-bottom: 30px !important;
+  }
+}
+
+/* Desktop Carousel Optimization */
+@media (min-width: 769px) {
+  .carousel-container {
+    height: 480px;
+    margin-bottom: 80px;
+  }
+  
+  .carousel-controls {
+    bottom: -50px;
+  }
+}
+
+/* Dark Mode Carousel Optimizations */
+.dark .card-front,
+.dark .card-back {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .control-btn {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+/* Light Mode Carousel Optimizations */
+.card-front,
+.card-back {
+  transition: all 0.3s ease;
+}
+
+.control-btn {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.control-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Touch Optimization */
+.carousel-container {
+  touch-action: pan-y;
+  overflow: visible;
+  position: relative;
+}
+
+.memory-card {
+  touch-action: none;
+}
+
+/* Ensure page has enough space for carousels */
+body {
+  padding-bottom: 100px;
+}
+
+@media (max-width: 480px) {
+  .carousel-container {
+    height: 240px !important;
+    margin-bottom: 30px !important;
+  }
+  
+  .memory-card {
+    width: 180px !important;
+    height: 220px !important;
+    margin-left: -90px !important;
+    margin-top: -110px !important;
   }
 }

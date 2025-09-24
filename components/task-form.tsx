@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Plus, X, Clock, Tag } from "lucide-react"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 interface Task {
   id?: string
@@ -42,8 +44,12 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
   const [description, setDescription] = useState(editingTask?.description || "")
   const [priority, setPriority] = useState<"low" | "medium" | "high">(editingTask?.priority || "medium")
   const [dueDate, setDueDate] = useState(editingTask?.dueDate || new Date().toISOString().split("T")[0])
-  const [startTime, setStartTime] = useState(editingTask?.startTime || "")
-  const [endTime, setEndTime] = useState(editingTask?.endTime || "")
+  const [startTime, setStartTime] = useState<Date | null>(
+    editingTask?.startTime ? new Date(`1970-01-01T${editingTask.startTime}:00`) : null
+  )
+  const [endTime, setEndTime] = useState<Date | null>(
+    editingTask?.endTime ? new Date(`1970-01-01T${editingTask.endTime}:00`) : null
+  )
   const [category, setCategory] = useState(editingTask?.category || "")
   const [tags, setTags] = useState<string[]>(editingTask?.tags || [])
   const [newTag, setNewTag] = useState("")
@@ -60,16 +66,13 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
     return `${hour12}:${minutes} ${ampm}`
   }
 
-  const validateTimes = (start: string, end: string) => {
+  const validateTimes = (start: Date | null, end: Date | null) => {
     if (!start || !end) {
       setTimeError("")
       return true
     }
     
-    const startMinutes = parseInt(start.split(":")[0]) * 60 + parseInt(start.split(":")[1])
-    const endMinutes = parseInt(end.split(":")[0]) * 60 + parseInt(end.split(":")[1])
-    
-    if (endMinutes <= startMinutes) {
+    if (end <= start) {
       setTimeError("Giờ kết thúc phải sau giờ bắt đầu")
       return false
     }
@@ -93,8 +96,8 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
       status: editingTask?.status || "todo" as const,
       priority,
       dueDate,
-      startTime: startTime.trim(),
-      endTime: endTime.trim(),
+      startTime: startTime ? startTime.toTimeString().slice(0, 5) : "",
+      endTime: endTime ? endTime.toTimeString().slice(0, 5) : "",
       tags,
       category: category.trim(),
       notes: notes.trim(),
@@ -113,8 +116,8 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
       setDescription("")
       setPriority("medium")
       setDueDate(new Date().toISOString().split("T")[0])
-      setStartTime("")
-      setEndTime("")
+      setStartTime(null)
+      setEndTime(null)
       setTags([])
       setCategory("")
       setNewTag("")
@@ -134,7 +137,7 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
         )}
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" lang="en-US">
           <div className="space-y-2">
             <Label htmlFor="title">Tên công việc *</Label>
             <Input
@@ -154,10 +157,13 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Mô tả chi tiết công việc..."
               rows={3}
+              className="whitespace-pre-wrap"
+              style={{ wordWrap: 'break-word' }}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* Priority and Category Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="priority">Mức độ ưu tiên</Label>
               <Select value={priority} onValueChange={(value: "low" | "medium" | "high") => setPriority(value)}>
@@ -173,6 +179,19 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="category">Danh mục</Label>
+              <Input
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Ví dụ: Công việc, Cá nhân..."
+              />
+            </div>
+          </div>
+
+          {/* Date and Time Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="dueDate">Ngày hoàn thành</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -187,57 +206,45 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="startTime">Giờ bắt đầu</Label>
+              <Label>Giờ bắt đầu</Label>
               <div className="relative">
-                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => {
-                    setStartTime(e.target.value)
-                    if (endTime) validateTimes(e.target.value, endTime)
+                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                <DatePicker
+                  selected={startTime}
+                  onChange={(date) => {
+                    setStartTime(date)
+                    if (endTime) validateTimes(date, endTime)
                   }}
-                  className="pl-10"
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Giờ"
+                  dateFormat="h:mm aa"
+                  className="w-full pl-10 pr-3 py-2 border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
+                  placeholderText="Chọn giờ bắt đầu"
                 />
-                {startTime && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimeToAMPM(startTime)}
-                  </p>
-                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endTime">Giờ kết thúc</Label>
+              <Label>Giờ kết thúc</Label>
               <div className="relative">
-                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => {
-                    setEndTime(e.target.value)
-                    if (startTime) validateTimes(startTime, e.target.value)
+                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                <DatePicker
+                  selected={endTime}
+                  onChange={(date) => {
+                    setEndTime(date)
+                    if (startTime) validateTimes(startTime, date)
                   }}
-                  className="pl-10"
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Giờ"
+                  dateFormat="h:mm aa"
+                  className="w-full pl-10 pr-3 py-2 border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
+                  placeholderText="Chọn giờ kết thúc"
                 />
-                {endTime && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimeToAMPM(endTime)}
-                  </p>
-                )}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Danh mục</Label>
-              <Input
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ví dụ: Công việc, Cá nhân..."
-              />
             </div>
           </div>
 
@@ -257,7 +264,8 @@ export function TaskForm({ onAddTask, onCancel, editingTask, onUpdateTask }: Tas
               onChange={(e) => setNotes(e.target.value)}
               placeholder="**Bold**, *italic*, `code`, - list item..."
               rows={3}
-              className="font-mono text-sm"
+              className="font-mono text-sm whitespace-pre-wrap"
+              style={{ wordWrap: 'break-word' }}
             />
           </div>
 

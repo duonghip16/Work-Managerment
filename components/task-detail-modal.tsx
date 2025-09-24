@@ -97,7 +97,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {task.description && (
             <div>
               <h4 className="font-medium mb-2">Mô tả:</h4>
-              <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded whitespace-pre-wrap" style={{ wordWrap: 'break-word' }}>
                 {task.description}
               </p>
             </div>
