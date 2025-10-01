@@ -82,7 +82,7 @@
 
 ### 🎯 Truy cập ngay
 1. **Mở trình duyệt** trên PC hoặc mobile
-2. **Truy cập**: [your-app-url.vercel.app](https://your-app-url.vercel.app)
+2. **Truy cập**: [[https://hipwork.vercel.app](https://hipwork.vercel.app/)
 3. **Bắt đầu sử dụng** ngay lập tức - không cần đăng ký!
 
 ### 📱 Trên Mobile (iPhone/Android)
@@ -215,7 +215,7 @@ interface Task {
 ## 🚀 Production Deployment
 
 ### ✅ Đã Deploy trên Vercel
-- **Live URL**: [your-app-url.vercel.app](https://your-app-url.vercel.app)
+- **Live URL**: [[https://hipwork.vercel.app](https://hipwork.vercel.app/).
 - **Auto-deployment** từ Git commits
 - **Global CDN** cho tốc độ tối ưu
 - **SSL Certificate** tự động
@@ -254,9 +254,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 👨💻 Author
 
 **Your Name**
-- GitHub: [@your-username](https://github.com/your-username)
+- GitHub: [duonghip16](https://github.com/duonghip16)
 - Email: your.email@example.com
-- Live Demo: [your-app-url.vercel.app](https://your-app-url.vercel.app)
+- Live Demo: [[https://hipwork.vercel.app](https://hipwork.vercel.app/).
 
 ## 🙏 Technology Stack
 
@@ -272,6 +272,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <div align="center">
   <h3>🌟 Ready to boost your productivity?</h3>
-  <p><strong><a href="https://your-app-url.vercel.app">Try TaskFlow now!</a></strong></p>
+  <p><strong><a href="(https://hipwork.vercel.app/)Try TaskFlow now!</a></strong></p>
   <p>Made with ❤️ using Next.js, Firebase & TypeScript</p>
 </div>
